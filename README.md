@@ -1,9 +1,5 @@
 # DevDuo — Two Coding Agents, One Codebase
 
-Kaggle AI Agents Capstone · **Agents for Business** track. Full pitch and
-course-concept mapping: [KAGGLE_WRITEUP.md](KAGGLE_WRITEUP.md). Build log and
-milestones: [project-blueprint.md](project-blueprint.md).
-
 ## Problem
 
 Shipping a full-stack feature means a backend and a frontend developer have
