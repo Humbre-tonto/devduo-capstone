@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DevDuo — Agent Conversation Monitor</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; padding: 24px; background: #0d1117; color: #c9d1d9;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: #8b949e; font-size: 13px; margin-bottom: 24px; }
+  .config {
+    display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .config input {
+    background: #161b22; border: 1px solid #30363d; color: #c9d1d9;
+    padding: 8px 10px; border-radius: 6px; font-size: 13px; flex: 1; min-width: 220px;
+  }
+  .config button {
+    background: #238636; border: none; color: white; padding: 8px 16px;
+    border-radius: 6px; cursor: pointer; font-size: 13px;
+  }
+  .status { font-size: 12px; color: #8b949e; margin-bottom: 16px; }
+  .status.live { color: #3fb950; }
+  .lanes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .lane {
+    background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+    padding: 16px; min-height: 300px;
+  }
+  .lane h2 {
+    font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;
+    color: #8b949e; margin: 0 0 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot.be { background: #58a6ff; }
+  .dot.fe { background: #d2a8ff; }
+  .msg {
+    background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
+    padding: 10px 12px; margin-bottom: 10px; font-size: 12px;
+    animation: fadein 0.4s ease;
+  }
+  @keyframes fadein { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  .msg .meta { display: flex; justify-content: space-between; color: #8b949e; margin-bottom: 6px; }
+  .msg .type {
+    font-weight: 600; padding: 2px 8px; border-radius: 4px; font-size: 10px;
+    background: #1f6feb33; color: #58a6ff;
+  }
+  .msg .type.CONFIRM { background: #8957e533; color: #d2a8ff; }
+  .msg pre {
+    margin: 0; white-space: pre-wrap; word-break: break-word; color: #c9d1d9;
+    font-family: ui-monospace, monospace; font-size: 11px;
+  }
+  .empty { color: #484f58; font-size: 12px; font-style: italic; }
+  .arrow { text-align: center; color: #484f58; font-size: 24px; margin: 8px 0; }
+</style>
+</head>
+<body>
+  <h1>🤝 DevDuo — Agent Conversation Monitor</h1>
+  <div class="sub">Live view of BE Agent ↔ FE Agent negotiating over crosstalk-mcp</div>
+
+  <div class="config">
+    <input id="proxyUrl" placeholder="Demo proxy URL (default http://localhost:8092)">
+    <button onclick="start()">Connect</button>
+  </div>
+  <div class="status" id="status">Not connected. Run "python demo_ui/proxy.py" first, then click Connect.</div>
+
+  <div class="lanes">
+    <div class="lane">
+      <h2><span class="dot be"></span> be-to-fe channel</h2>
+      <div id="be-to-fe" class="empty">No messages yet.</div>
+    </div>
+    <div class="lane">
+      <h2><span class="dot fe"></span> fe-to-be channel</h2>
+      <div id="fe-to-be" class="empty">No messages yet.</div>
+    </div>
+  </div>
+
+<script>
+let pollTimer = null;
+
+function renderMessages(containerId, messages) {
+  const el = document.getElementById(containerId);
+  if (!messages.length) {
+    el.innerHTML = '<div class="empty">No messages yet.</div>';
+    return;
+  }
+  el.innerHTML = messages.map(m => `
+    <div class="msg">
+      <div class="meta">
+        <span>${m.sender}</span>
+        <span class="type ${m.type}">${m.type}</span>
+      </div>
+      <pre>${escapeHtml(formatBody(m.body))}</pre>
+      <div class="meta"><span></span><span>#${m.id} · ${new Date(m.created_at).toLocaleTimeString()}</span></div>
+    </div>
+  `).join('');
+}
+
+function formatBody(body) {
+  try { return JSON.stringify(JSON.parse(body), null, 2); }
+  catch { return body; }
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function fetchChannel(base, channel) {
+  const res = await fetch(`${base}/channels/${channel}/messages?since_id=0`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function poll(base) {
+  try {
+    const [beToFe, feToBe] = await Promise.all([
+      fetchChannel(base, 'be-to-fe'),
+      fetchChannel(base, 'fe-to-be'),
+    ]);
+    renderMessages('be-to-fe', beToFe);
+    renderMessages('fe-to-be', feToBe);
+    document.getElementById('status').textContent = `● Live — polling every 2s — last update ${new Date().toLocaleTimeString()}`;
+    document.getElementById('status').className = 'status live';
+  } catch (e) {
+    document.getElementById('status').textContent = `Error: ${e.message}. Is demo_ui/proxy.py running?`;
+    document.getElementById('status').className = 'status';
+  }
+}
+
+function start() {
+  const base = (document.getElementById('proxyUrl').value.trim() || 'http://localhost:8092').replace(/\/$/, '');
+  localStorage.setItem('devduo_proxy_url', base);
+  if (pollTimer) clearInterval(pollTimer);
+  poll(base);
+  pollTimer = setInterval(() => poll(base), 2000);
+}
+
+window.onload = () => {
+  const savedUrl = localStorage.getItem('devduo_proxy_url') || 'http://localhost:8092';
+  document.getElementById('proxyUrl').value = savedUrl;
+  start();
+};
+</script>
+</body>
+</html>
