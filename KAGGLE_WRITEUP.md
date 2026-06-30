@@ -3,7 +3,7 @@
 **Kaggle AI Agents Capstone · Freestyle Track**
 *Submission deadline: July 6, 2026*
 
-> ⚠️ Fill in the bracketed placeholders below before submitting: `[GITHUB_URL]`, `[VIDEO_URL]`, your name/handle.
+> ⚠️ Fill in the remaining placeholder before submitting: `[VIDEO_URL]`.
 
 ---
 
@@ -128,8 +128,8 @@ calling out because it shows the system actually ran, not just compiled:
 ## 7. How to run it yourself
 
 ```bash
-git clone [GITHUB_URL]
-cd devduo
+git clone https://github.com/Humbre-tonto/devduo-capstone
+cd devduo-capstone
 cp .env.example .env   # fill in RELAY_URL / RELAY_TOKEN / GOOGLE_API_KEY
 
 source .venv/bin/activate   # python -m venv .venv && pip install -r requirements.txt
@@ -145,7 +145,7 @@ cd demo_ui && python3 -m http.server 8090
 
 ## 8. Links
 
-- **GitHub repo:** [GITHUB_URL]
+- **GitHub repo:** https://github.com/Humbre-tonto/devduo-capstone
 - **Demo video (2–3 min):** [VIDEO_URL]
 - **crosstalk-mcp:** credited as the relay this project deploys and builds on top of
 
@@ -153,8 +153,8 @@ cd demo_ui && python3 -m http.server 8090
 
 ## 9. Submission checklist
 
-- [ ] Public GitHub repo with clean README
-- [ ] crosstalk-mcp credited and linked
+- [x] Public GitHub repo with clean README
+- [x] crosstalk-mcp credited and linked
 - [ ] Live demo or video walkthrough (2-3 min)
 - [x] Kaggle writeup covering pitch + implementation (this file)
 - [x] Architecture diagram (section 3)
