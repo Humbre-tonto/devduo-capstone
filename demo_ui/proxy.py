@@ -12,7 +12,6 @@ Usage:
     python proxy.py
 """
 
-import json
 import os
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -39,6 +38,10 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        # Read-only by design: this proxy only implements do_GET, so the
+        # demo page (and anyone on the local network who reaches this port)
+        # can observe the agents' negotiation but never post messages into
+        # it — the token it holds can't be used to write through this path.
         if not self.path.startswith("/channels/"):
             self.send_response(404)
             self._cors_headers()

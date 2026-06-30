@@ -32,6 +32,11 @@ async def run_agent(agent, prompt: str, label: str) -> None:
 async def main() -> None:
     feature = " ".join(sys.argv[1:]) or "Build me a TODO app"
 
+    # Deliberately sequential, not parallel: the FE agent's prompt only tells
+    # it the contract exists, not what it says. It has to fetch the contract
+    # itself off crosstalk-mcp (see fe_agent/agent.py) — this orchestrator
+    # never passes API details between the two agents directly, so the relay
+    # really is the only integration path, not just a formality.
     await run_agent(
         be_root_agent,
         f"Feature request from the user: {feature}",

@@ -30,6 +30,8 @@ def write_file(relative_path: str, content: str) -> dict:
     content: full file contents to write.
     """
     target = (OUTPUT_DIR / relative_path).resolve()
+    # The model controls relative_path; reject "../" escapes so a prompt-injected
+    # or hallucinated path can't write outside the agent's own output sandbox.
     if OUTPUT_DIR not in target.parents and target != OUTPUT_DIR:
         return {"error": "path escapes output directory"}
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -37,6 +39,10 @@ def write_file(relative_path: str, content: str) -> dict:
     return {"written": str(target.relative_to(OUTPUT_DIR))}
 
 
+# This is the agent's only link to the outside world. The token travels in
+# the connection headers (never in the conversation/prompt), and the FE
+# agent only ever sees what gets posted through this toolset — it has no
+# other way to read the BE agent's code, reasoning, or files.
 crosstalk_toolset = MCPToolset(
     connection_params=StreamableHTTPConnectionParams(
         url=f"{RELAY_URL}/mcp",

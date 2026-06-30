@@ -1,5 +1,5 @@
 # 🤝 DevDuo — Two Coding Agents, One Codebase
-### Kaggle AI Agents Capstone · Freestyle Track
+### Kaggle AI Agents Capstone · Agents for Business Track
 **Author:** Solo submission | **Deadline:** July 6, 2026
 
 ---

@@ -31,6 +31,8 @@ def write_file(relative_path: str, content: str) -> dict:
     content: full file contents to write.
     """
     target = (OUTPUT_DIR / relative_path).resolve()
+    # Same sandbox guard as the BE agent: the model picks relative_path, so
+    # reject any "../" escape rather than trust it.
     if OUTPUT_DIR not in target.parents and target != OUTPUT_DIR:
         return {"error": "path escapes output directory"}
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -38,6 +40,9 @@ def write_file(relative_path: str, content: str) -> dict:
     return {"written": str(target.relative_to(OUTPUT_DIR))}
 
 
+# The FE agent's only source of truth about the API is whatever the BE agent
+# posted to be-to-fe through this same relay connection — it never reads the
+# BE agent's source files or shares any other context with it.
 crosstalk_toolset = MCPToolset(
     connection_params=StreamableHTTPConnectionParams(
         url=f"{RELAY_URL}/mcp",
